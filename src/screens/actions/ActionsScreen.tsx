@@ -107,8 +107,8 @@ const FilterText = styled(Text)<{ active: boolean }>`
 `;
 
 const ActionCardContainer = styled(Card)`
-  margin-horizontal: ${props => props.theme.spacing.md}px;
-  margin-bottom: ${props => props.theme.spacing.md}px;
+  margin-horizontal: ${props => props.theme?.spacing?.md || 16}px;
+  margin-bottom: ${props => props.theme?.spacing?.md || 16}px;
 `;
 
 const ActionHeader = styled(View)`

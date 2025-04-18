@@ -7,6 +7,7 @@ import { KPIBox } from '@components/common/KPIBox';
 import { Button } from '@components/common/Button';
 import { useTheme } from '@hooks/useTheme';
 import styled from 'styled-components/native';
+import { Feather } from '@expo/vector-icons';
 
 // Mock de dados para KPIs
 const kpiData = [
@@ -54,10 +55,10 @@ const KPIItem = styled(View)`
 `;
 
 const ActionCard = styled(Card)`
-  margin-bottom: ${props => props.theme.spacing.md}px;
+  margin-bottom: ${props => props.theme?.spacing?.md || 16}px;
   flex-direction: row;
   align-items: center;
-  padding: ${props => props.theme.spacing.md}px;
+  padding: ${props => props.theme?.spacing?.md || 16}px;
 `;
 
 const ActionIcon = styled(View)<{ type: 'warning' | 'opportunity' | 'reminder', theme: any }>`
