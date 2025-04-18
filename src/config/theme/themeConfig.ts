@@ -1,9 +1,18 @@
 // src/config/theme/themeConfig.ts
 import { defaultTheme, ThemeType } from './defaultTheme';
 
+// Tente importar os placeholders, mas tenha um fallback caso não exista
+let logoPlaceholders: any = { default: null, clientA: null, clientB: null };
+try {
+  // Importação dinâmica para evitar erros caso o arquivo não exista
+  logoPlaceholders = require('../../assets/placeholders').logoPlaceholders;
+} catch (e) {
+  console.warn('Arquivo de placeholders não encontrado. Usando null para logos.');
+}
+
 export interface ClientConfig {
   name: string;
-  logoUrl: string;
+  logoUrl: any; // Tipo any para aceitar tanto string quanto require()
   theme: Partial<ThemeType>;
 }
 
@@ -11,12 +20,13 @@ export interface ClientConfig {
 export const clientConfigs: Record<string, ClientConfig> = {
   default: {
     name: 'FarmApp',
-    logoUrl: require('@assets/logos/default-logo.png'),
+    // Use o placeholder se disponível, ou null caso contrário
+    logoUrl: logoPlaceholders.default,
     theme: defaultTheme
   },
   clientA: {
     name: 'Saúde Farma',
-    logoUrl: require('@assets/logos/client-a-logo.png'),
+    logoUrl: logoPlaceholders.clientA,
     theme: {
       colors: {
         ...defaultTheme.colors,
@@ -28,7 +38,7 @@ export const clientConfigs: Record<string, ClientConfig> = {
   },
   clientB: {
     name: 'Vida Farma',
-    logoUrl: require('@assets/logos/client-b-logo.png'),
+    logoUrl: logoPlaceholders.clientB,
     theme: {
       colors: {
         ...defaultTheme.colors,

@@ -154,8 +154,11 @@ export const LoginScreen: React.FC = () => {
       <ScrollContainer contentContainerStyle={{ flexGrow: 1 }}>
         <ContentContainer theme={theme}>
           <LogoContainer theme={theme}>
-            <Logo source={logoUrl} />
-            <Title theme={theme}>Bem-vindo ao {name}</Title>
+            {logoUrl ? (
+              <Logo source={logoUrl} />
+            ) : (
+              <Title theme={theme}>{name}</Title>
+            )}
           </LogoContainer>
           
           <InputContainer theme={theme}>
