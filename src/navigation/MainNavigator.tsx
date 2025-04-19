@@ -1,48 +1,71 @@
-// src/navigation/MainNavigator.tsx (com modificações)
+// src/navigation/MainNavigator.tsx
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Feather } from '@expo/vector-icons';
+import { View } from 'react-native';
+import { useTheme } from '@hooks/useTheme';
+import styled from 'styled-components/native';
+
+// Importar navegadores e telas
 import { DashboardScreen } from '@screens/dashboard/DashboardScreen';
-import { NotificationsScreen } from '@screens/notifications/NotificationsScreen';
-import { ActionsScreen } from '@screens/actions/ActionsScreen';
-import { ProfileScreen } from '@screens/profile/ProfileScreen';
 import { DashboardNavigator } from './DashboardNavigator';
+import { ActionsScreen } from '@screens/actions/ActionsScreen';
 import { ActionListScreen } from '@screens/actions/ActionListScreen';
 import { ActionPlanDetailsScreen } from '@screens/actions/ActionPlanDetailsScreen';
-import { useTheme } from '@hooks/useTheme';
-
-// Importar as novas telas de vendedores
+import { ProfileScreen } from '@screens/profile/ProfileScreen';
 import SellersListScreen from '@screens/sellers/SellersListScreen';
 import SellerDetailsScreen from '@screens/sellers/SellerDetailsScreen';
 
-// Stack navigators para cada tab
+// Stack Navigators
 const OriginalDashboardStack = createStackNavigator();
-const NotificationsStack = createStackNavigator();
+const DiagnosticStack = createStackNavigator();
+const TeamStack = createStackNavigator();
 const ActionsStack = createStackNavigator();
 const ProfileStack = createStackNavigator();
 
-// Stack Navigator para o Dashboard Original
-const OriginalDashboardNavigator = () => (
+// Estilização para o ícone da tab
+const IconBadge = styled(View)<{ focused: boolean }>`
+  width: 5px;
+  height: 5px;
+  border-radius: 2.5px;
+  background-color: ${props => props.focused ? props.theme.colors.primary : 'transparent'};
+  margin-top: 4px;
+`;
+
+const IconContainer = styled(View)`
+  align-items: center;
+  justify-content: center;
+`;
+
+// Stack Navigator para o Dashboard Original (com indicadores e análise de desempenho)
+const OriginalDashboardTabNavigator = () => (
   <OriginalDashboardStack.Navigator screenOptions={{ headerShown: false }}>
     <OriginalDashboardStack.Screen name="DashboardMain" component={DashboardScreen} />
-    {/* Adicionar as novas telas ao navegador do Dashboard */}
     <OriginalDashboardStack.Screen name="SellersList" component={SellersListScreen} />
     <OriginalDashboardStack.Screen name="SellerDetails" component={SellerDetailsScreen} />
     <OriginalDashboardStack.Screen name="ActionPlanDetails" component={ActionPlanDetailsScreen} />
   </OriginalDashboardStack.Navigator>
 );
 
-// Stack Navigator para Notificações
-const NotificationsNavigator = () => (
-  <NotificationsStack.Navigator screenOptions={{ headerShown: false }}>
-    <NotificationsStack.Screen name="NotificationsMain" component={NotificationsScreen} />
-    {/* Adicione outras telas relacionadas às Notificações aqui */}
-  </NotificationsStack.Navigator>
+// Stack Navigator para o novo Diagnóstico (que é o atual Dashboard)
+const DiagnosticTabNavigator = () => (
+  <DiagnosticStack.Navigator screenOptions={{ headerShown: false }}>
+    <DiagnosticStack.Screen name="DiagnosticMain" component={DashboardNavigator} />
+  </DiagnosticStack.Navigator>
+);
+
+// Stack Navigator para Equipe
+const TeamTabNavigator = () => (
+  <TeamStack.Navigator screenOptions={{ headerShown: false }}>
+    <TeamStack.Screen name="SellersList" component={SellersListScreen} />
+    <TeamStack.Screen name="SellerDetails" component={SellerDetailsScreen} />
+    <TeamStack.Screen name="ActionPlanDetails" component={ActionPlanDetailsScreen} />
+  </TeamStack.Navigator>
 );
 
 // Stack Navigator para Ações
-const ActionsNavigator = () => (
+const ActionsTabNavigator = () => (
   <ActionsStack.Navigator screenOptions={{ headerShown: false }}>
     <ActionsStack.Screen name="ActionsMain" component={ActionsScreen} />
     <ActionsStack.Screen name="ActionList" component={ActionListScreen} />
@@ -51,39 +74,49 @@ const ActionsNavigator = () => (
 );
 
 // Stack Navigator para Perfil
-const ProfileNavigator = () => (
+const ProfileTabNavigator = () => (
   <ProfileStack.Navigator screenOptions={{ headerShown: false }}>
     <ProfileStack.Screen name="ProfileMain" component={ProfileScreen} />
-    {/* Adicione outras telas relacionadas ao Perfil aqui */}
   </ProfileStack.Navigator>
 );
 
-// Definição do Tab Navigator principal
+// Definição do Bottom Tab Navigator
 const Tab = createBottomTabNavigator();
 
 export const MainNavigator: React.FC = () => {
   const theme = useTheme();
   
+  // Em uma implementação real, isso viria do contexto de autenticação
+  const userRole = 'manager'; // Mock - valores possíveis: 'admin', 'manager', 'operator', 'owner'
+  
+  // Verificação do perfil do usuário para mostrar ou não algumas tabs
+  const showTeamTab = ['admin', 'manager', 'owner'].includes(userRole);
+  
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarIcon: ({ color, size }) => {
+        tabBarIcon: ({ color, size, focused }) => {
           let iconName: keyof typeof Feather.glyphMap = 'home';
           
           if (route.name === 'Dashboard') {
             iconName = 'grid';
-          } else if (route.name === 'Diagnostico') {
+          } else if (route.name === 'Diagnostic') {
             iconName = 'activity';
-          } else if (route.name === 'Notifications') {
-            iconName = 'bell';
+          } else if (route.name === 'Team') {
+            iconName = 'users';
           } else if (route.name === 'Actions') {
-            iconName = 'trending-up';
+            iconName = 'check-square';
           } else if (route.name === 'Profile') {
             iconName = 'user';
           }
           
-          return <Feather name={iconName} size={size} color={color} />;
+          return (
+            <IconContainer>
+              <Feather name={iconName} size={size} color={color} />
+              <IconBadge focused={focused} theme={theme} />
+            </IconContainer>
+          );
         },
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.inactive,
@@ -102,29 +135,37 @@ export const MainNavigator: React.FC = () => {
     >
       <Tab.Screen 
         name="Dashboard" 
-        component={OriginalDashboardNavigator} 
+        component={OriginalDashboardTabNavigator} 
         options={{ tabBarLabel: 'Dashboard' }}
       />
+      
       <Tab.Screen 
-        name="Diagnostico" 
-        component={DashboardNavigator} 
+        name="Diagnostic" 
+        component={DiagnosticTabNavigator} 
         options={{ tabBarLabel: 'Diagnóstico' }}
       />
-      <Tab.Screen 
-        name="Notifications" 
-        component={NotificationsNavigator}
-        options={{ tabBarLabel: 'Notificações' }}
-      />
+      
+      {showTeamTab && (
+        <Tab.Screen 
+          name="Team" 
+          component={TeamTabNavigator} 
+          options={{ tabBarLabel: 'Equipe' }}
+        />
+      )}
+      
       <Tab.Screen 
         name="Actions" 
-        component={ActionsNavigator}
+        component={ActionsTabNavigator}
         options={{ tabBarLabel: 'Ações' }}
       />
+      
       <Tab.Screen 
         name="Profile" 
-        component={ProfileNavigator}
+        component={ProfileTabNavigator}
         options={{ tabBarLabel: 'Perfil' }}
       />
     </Tab.Navigator>
   );
 };
+
+export default MainNavigator;

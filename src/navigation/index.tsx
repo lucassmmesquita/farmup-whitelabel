@@ -1,9 +1,10 @@
-// src/navigation/index.tsx
+// src/navigation/index.tsx (atualizado)
 import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { AuthNavigator } from './AuthNavigator';
 import { MainNavigator } from './MainNavigator';
+import { NotificationsScreen } from '@screens/notifications/NotificationsScreen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LoadingScreen } from '@screens/common/LoadingScreen';
 
@@ -11,6 +12,7 @@ export type RootStackParamList = {
   Auth: undefined;
   Main: undefined;
   Loading: undefined;
+  NotificationsMain: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -50,7 +52,10 @@ export const AppNavigation: React.FC = () => {
         }}
       >
         {isAuthenticated ? (
-          <Stack.Screen name="Main" component={MainNavigator} />
+          <>
+            <Stack.Screen name="Main" component={MainNavigator} />
+            <Stack.Screen name="NotificationsMain" component={NotificationsScreen} />
+          </>
         ) : (
           <Stack.Screen name="Auth" component={AuthNavigator} />
         )}

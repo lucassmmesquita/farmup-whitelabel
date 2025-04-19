@@ -1,6 +1,6 @@
 // src/screens/actions/ActionsScreen.tsx
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { AppHeader } from '@components/layout/AppHeader';
 import { Card } from '@components/common/Card';
 import { useTheme } from '@hooks/useTheme';
@@ -8,79 +8,8 @@ import { Feather } from '@expo/vector-icons';
 import styled from 'styled-components/native';
 import { useNavigation } from '@react-navigation/native';
 import actionPlanService from '@/services/api/actionPlanService';
+import hierarchyService from '@/services/api/hierarchyService';
 import { ActionPlan } from '@/types/metrics';
-
-// Mock de dados para ações
-const actionsMock = [
-  {
-    id: '1',
-    title: 'Estoque baixo',
-    description: 'Produto Dipirona está com estoque baixo (5 unidades)',
-    icon: 'alert-triangle',
-    type: 'inventory',
-    priority: 'high',
-    actions: [
-      { label: 'Fazer pedido', action: 'order' },
-      { label: 'Verificar estoque', action: 'check_inventory' },
-    ],
-  },
-  {
-    id: '2',
-    title: 'Venda cruzada',
-    description: 'Ofereça protetor solar junto com bronzeador para aumentar ticket médio',
-    icon: 'dollar-sign',
-    type: 'sales',
-    priority: 'medium',
-    actions: [
-      { label: 'Ver sugestão', action: 'view_suggestion' },
-      { label: 'Verificar estoque', action: 'check_inventory' },
-    ],
-  },
-  {
-    id: '3',
-    title: 'Campanha de aniversariantes',
-    description: '15 clientes fazem aniversário esta semana. Envie mensagem personalizada.',
-    icon: 'gift',
-    type: 'marketing',
-    priority: 'medium',
-    actions: [
-      { label: 'Ver lista', action: 'view_list' },
-      { label: 'Enviar mensagem', action: 'send_message' },
-    ],
-  },
-  {
-    id: '4',
-    title: 'Produtos perto do vencimento',
-    description: '12 produtos vencem nos próximos 30 dias',
-    icon: 'clock',
-    type: 'inventory',
-    priority: 'high',
-    actions: [
-      { label: 'Ver produtos', action: 'view_products' },
-      { label: 'Criar promoção', action: 'create_promotion' },
-    ],
-  },
-  {
-    id: '5',
-    title: 'Meta de vendas',
-    description: 'Sua meta diária está 35% abaixo do esperado',
-    icon: 'trending-down',
-    type: 'sales',
-    priority: 'high',
-    actions: [
-      { label: 'Ver detalhes', action: 'view_details' },
-    ],
-  },
-];
-
-// Filtragem por categorias
-const categories = [
-  { id: 'all', label: 'Todas', icon: 'grid' },
-  { id: 'inventory', label: 'Estoque', icon: 'package' },
-  { id: 'sales', label: 'Vendas', icon: 'dollar-sign' },
-  { id: 'marketing', label: 'Marketing', icon: 'users' },
-  { id: 'plans', label: 'Planos de Ação', icon: 'check-circle' }, // Nova categoria
-];
 
 // Componentes estilizados
 const Container = styled(View)`
@@ -110,9 +39,51 @@ const FilterText = styled(Text)<{ active: boolean }>`
   margin-left: ${props => props.theme.spacing.xs}px;
 `;
 
-const ActionCardContainer = styled(Card)`
-  margin-horizontal: ${props => props.theme?.spacing?.md || 16}px;
-  margin-bottom: ${props => props.theme?.spacing?.md || 16}px;
+const TypeFilterContainer = styled(View)`
+  padding-horizontal: ${props => props.theme.spacing.md}px;
+  padding-bottom: ${props => props.theme.spacing.md}px;
+  flex-direction: row;
+  flex-wrap: wrap;
+`;
+
+const TypeFilterChip = styled(TouchableOpacity)<{ active: boolean }>`
+  background-color: ${props => props.active ? props.theme.colors.primary : `${props.theme.colors.primary}10`};
+  border-radius: ${props => props.theme.roundness.full}px;
+  padding-horizontal: ${props => props.theme.spacing.md}px;
+  padding-vertical: ${props => props.theme.spacing.xs}px;
+  margin-right: ${props => props.theme.spacing.sm}px;
+  margin-bottom: ${props => props.theme.spacing.sm}px;
+`;
+
+const TypeFilterText = styled(Text)<{ active: boolean }>`
+  font-family: ${props => props.theme.typography.fontFamily.medium};
+  font-size: ${props => props.theme.typography.fontSize.sm}px;
+  color: ${props => props.active ? '#FFFFFF' : props.theme.colors.primary};
+`;
+
+const SectionTitle = styled(Text)`
+  font-family: ${props => props.theme.typography.fontFamily.semiBold};
+  font-size: ${props => props.theme.typography.fontSize.md}px;
+  color: ${props => props.theme.colors.text};
+  padding-horizontal: ${props => props.theme.spacing.md}px;
+  padding-top: ${props => props.theme.spacing.md}px;
+  padding-bottom: ${props => props.theme.spacing.sm}px;
+`;
+
+const ActionCardContainer = styled(TouchableOpacity)`
+  margin-horizontal: ${props => props.theme.spacing.md}px;
+  margin-bottom: ${props => props.theme.spacing.md}px;
+  background-color: ${props => props.theme.colors.card};
+  border-radius: ${props => props.theme.roundness.md}px;
+  padding: ${props => props.theme.spacing.md}px;
+  border-left-width: 4px;
+  border-left-color: ${props => {
+    switch (props.priority) {
+      case 'high': return props.theme.colors.error;
+      case 'medium': return props.theme.colors.warning;
+      default: return props.theme.colors.primary;
+    }
+  }};
 `;
 
 const ActionHeader = styled(View)`
@@ -153,88 +124,6 @@ const ActionDescription = styled(Text)`
   color: ${props => props.theme.colors.subtext};
 `;
 
-const ActionButtonsContainer = styled(View)`
-  flex-direction: row;
-  justify-content: flex-end;
-  margin-top: ${props => props.theme.spacing.md}px;
-`;
-
-const ActionButton = styled(TouchableOpacity)`
-  padding-vertical: ${props => props.theme.spacing.xs}px;
-  padding-horizontal: ${props => props.theme.spacing.md}px;
-  border-radius: ${props => props.theme.roundness.sm}px;
-  background-color: ${props => `${props.theme.colors.primary}10`};
-  margin-left: ${props => props.theme.spacing.sm}px;
-`;
-
-const ActionButtonText = styled(Text)`
-  font-family: ${props => props.theme.typography.fontFamily.medium};
-  font-size: ${props => props.theme.typography.fontSize.sm}px;
-  color: ${props => props.theme.colors.primary};
-`;
-
-const PriorityBadge = styled(View)<{ priority: string }>`
-  padding-vertical: ${props => props.theme.spacing.xs / 2}px;
-  padding-horizontal: ${props => props.theme.spacing.sm}px;
-  border-radius: ${props => props.theme.roundness.sm}px;
-  background-color: ${props => {
-    switch (props.priority) {
-      case 'high': return `${props.theme.colors.error}15`;
-      case 'medium': return `${props.theme.colors.warning}15`;
-      default: return `${props.theme.colors.primary}15`;
-    }
-  }};
-  align-self: flex-start;
-`;
-
-const PriorityText = styled(Text)<{ priority: string }>`
-  font-family: ${props => props.theme.typography.fontFamily.medium};
-  font-size: ${props => props.theme.typography.fontSize.xs}px;
-  color: ${props => {
-    switch (props.priority) {
-      case 'high': return props.theme.colors.error;
-      case 'medium': return props.theme.colors.warning;
-      default: return props.theme.colors.primary;
-    }
-  }};
-`;
-
-const EmptyContainer = styled(View)`
-  flex: 1;
-  justify-content: center;
-  align-items: center;
-  padding: ${props => props.theme.spacing.xl}px;
-`;
-
-const EmptyText = styled(Text)`
-  font-family: ${props => props.theme.typography.fontFamily.medium};
-  font-size: ${props => props.theme.typography.fontSize.md}px;
-  color: ${props => props.theme.colors.subtext};
-  text-align: center;
-  margin-top: ${props => props.theme.spacing.md}px;
-`;
-
-const PlanCardContainer = styled(TouchableOpacity)`
-  margin-horizontal: ${props => props.theme.spacing.md}px;
-  margin-bottom: ${props => props.theme.spacing.md}px;
-  background-color: ${props => props.theme.colors.card};
-  border-radius: ${props => props.theme.roundness.md}px;
-  padding: ${props => props.theme.spacing.md}px;
-  border-left-width: 4px;
-  border-left-color: ${props => {
-    switch (props.priority) {
-      case 'high': return props.theme.colors.error;
-      case 'medium': return props.theme.colors.warning;
-      default: return props.theme.colors.primary;
-    }
-  }};
-  elevation: 2;
-  shadow-opacity: 0.1;
-  shadow-radius: 3px;
-  shadow-color: #000;
-  shadow-offset: 0px 2px;
-`;
-
 const StatusBadge = styled(View)<{ status: string }>`
   padding-vertical: ${props => props.theme.spacing.xs / 2}px;
   padding-horizontal: ${props => props.theme.spacing.sm}px;
@@ -266,47 +155,128 @@ const StatusText = styled(Text)<{ status: string }>`
   }};
 `;
 
+const EmptyContainer = styled(View)`
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+  padding: ${props => props.theme.spacing.xl}px;
+`;
+
+const EmptyText = styled(Text)`
+  font-family: ${props => props.theme.typography.fontFamily.medium};
+  font-size: ${props => props.theme.typography.fontSize.md}px;
+  color: ${props => props.theme.colors.subtext};
+  text-align: center;
+  margin-top: ${props => props.theme.spacing.md}px;
+`;
+
+const DiagnosticTag = styled(View)`
+  background-color: ${props => `${props.theme.colors.primary}15`};
+  padding-horizontal: ${props => props.theme.spacing.xs}px;
+  padding-vertical: 2px;
+  border-radius: ${props => props.theme.roundness.sm}px;
+  margin-right: ${props => props.theme.spacing.sm}px;
+`;
+
+const DiagnosticTagText = styled(Text)`
+  font-family: ${props => props.theme.typography.fontFamily.medium};
+  font-size: ${props => props.theme.typography.fontSize.xs}px;
+  color: ${props => props.theme.colors.primary};
+`;
+
+const TagsContainer = styled(View)`
+  flex-direction: row;
+  align-items: center;
+  margin-top: ${props => props.theme.spacing.xs}px;
+`;
+
+// Tipos de filtros
+type ActionFilter = 'all' | 'pending' | 'in_progress' | 'completed';
+type ActionTypeFilter = 'all' | 'operational' | 'diagnostic' | 'team';
+
+// Interface estendida para incluir as propriedades adicionais
+interface ExtendedActionPlan extends ActionPlan {
+  source?: 'operational' | 'diagnostic';
+  indicatorName?: string;
+}
+
 export const ActionsScreen: React.FC = () => {
   const theme = useTheme();
   const navigation = useNavigation();
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [actionPlans, setActionPlans] = useState<ActionPlan[]>([]);
+  
+  const [filter, setFilter] = useState<ActionFilter>('all');
+  const [typeFilter, setTypeFilter] = useState<ActionTypeFilter>('all');
+  const [actions, setActions] = useState<ExtendedActionPlan[]>([]);
+  const [diagnosticActions, setDiagnosticActions] = useState<ExtendedActionPlan[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
   
   useEffect(() => {
-    // Carregar planos de ação ao iniciar
-    loadActionPlans();
+    const loadActions = async () => {
+      setLoading(true);
+      try {
+        // Carregar planos de ação operacionais
+        const operationalPlans = actionPlanService.getAllActionPlans();
+        
+        // Marcar os planos operacionais com a fonte
+        const markedOperationalPlans = operationalPlans.map(plan => ({
+          ...plan,
+          source: 'operational' as const
+        }));
+        
+        // Carregar recomendações do diagnóstico
+        const uvcRecommendations = hierarchyService.getRecommendations('uvc');
+        const priceRecommendations = hierarchyService.getRecommendations('precoMedio');
+        
+        // Formatar recomendações para o mesmo formato de planos de ação
+        // Garantir que cada recomendação tenha um ID único prefixando com "diag-"
+        const formattedRecommendations = [...uvcRecommendations, ...priceRecommendations].map(rec => ({
+          id: `diag-${rec.actionId}`, // Prefixo para evitar colisões de ID
+          indicatorId: rec.id.includes('uvc') ? 'uvc' : 'precoMedio',
+          title: rec.title,
+          description: rec.description,
+          steps: [rec.impact],
+          priority: rec.priority,
+          status: 'pending',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          source: 'diagnostic' as const,
+          indicatorName: rec.id.includes('uvc') ? 'UVC' : 'Preço Médio',
+          originalActionId: rec.actionId // Mantemos o ID original para referência
+        }));
+        
+        setActions(markedOperationalPlans);
+        setDiagnosticActions(formattedRecommendations);
+      } catch (error) {
+        console.error('Erro ao carregar ações:', error);
+        Alert.alert('Erro', 'Não foi possível carregar as ações disponíveis.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadActions();
   }, []);
   
-  const loadActionPlans = () => {
-    try {
-      const plans = actionPlanService.getAllActionPlans();
-      setActionPlans(plans);
-    } catch (error) {
-      console.error('Erro ao carregar planos de ação:', error);
+  // Combinar ações baseadas nos filtros
+  const combinedActions = () => {
+    let filteredActions = [...actions];
+    let filteredDiagnosticActions = [...diagnosticActions];
+    
+    // Aplicar filtro de status
+    if (filter !== 'all') {
+      filteredActions = filteredActions.filter(action => action.status === filter);
+      filteredDiagnosticActions = filteredDiagnosticActions.filter(action => action.status === filter);
     }
-  };
-  
-  // Filtra as ações com base na categoria selecionada
-  const filteredActions = selectedCategory === 'all'
-    ? actionsMock
-    : selectedCategory === 'plans'
-    ? [] // Quando a categoria é 'plans', usamos o estado de planos de ação
-    : actionsMock.filter(action => action.type === selectedCategory);
-  
-  const getPriorityLabel = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'Alta prioridade';
-      case 'medium': return 'Média prioridade';
-      default: return 'Baixa prioridade';
+    
+    // Aplicar filtro de tipo
+    if (typeFilter === 'operational') {
+      return filteredActions;
+    } else if (typeFilter === 'diagnostic') {
+      return filteredDiagnosticActions;
     }
-  };
-  
-  const getIconColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return theme.colors.error;
-      case 'medium': return theme.colors.warning;
-      default: return theme.colors.primary;
-    }
+    
+    // Combinar as ações se estivermos mostrando 'todos'
+    return [...filteredActions, ...filteredDiagnosticActions];
   };
   
   const getStatusLabel = (status: string): string => {
@@ -320,80 +290,57 @@ export const ActionsScreen: React.FC = () => {
     }
   };
   
-  const handleActionButton = (actionType: string, itemId: string) => {
-    // Implementar ações específicas aqui
-    console.log(`Action: ${actionType} for item ${itemId}`);
+  const getIconForPriority = (priority: string): keyof typeof Feather.glyphMap => {
+    switch (priority) {
+      case 'high': return 'alert-circle';
+      case 'medium': return 'alert-triangle';
+      default: return 'info';
+    }
   };
   
-  const handleActionPlanPress = (plan: ActionPlan) => {
-    navigation.navigate('ActionPlanDetails', { actionId: plan.id });
+  const handleActionPress = (action: ExtendedActionPlan) => {
+    // Se for ação de diagnóstico, usamos o ID original, senão usamos o ID normal
+    const actionId = action.source === 'diagnostic' ? action.originalActionId : action.id;
+    navigation.navigate('ActionPlanDetails', { actionId });
   };
   
-  const renderActionCard = ({ item }: { item: typeof actionsMock[0] }) => (
-    <ActionCardContainer elevation="light">
-      <ActionHeader theme={theme}>
-        <ActionIcon priority={item.priority} theme={theme}>
-          <Feather 
-            name={item.icon as any} 
-            size={20} 
-            color={getIconColor(item.priority)} 
-          />
-        </ActionIcon>
-        
-        <ActionInfo theme={theme}>
-          <ActionTitle theme={theme}>{item.title}</ActionTitle>
-          <ActionDescription theme={theme}>{item.description}</ActionDescription>
-        </ActionInfo>
-      </ActionHeader>
-      
-      <PriorityBadge priority={item.priority} theme={theme}>
-        <PriorityText priority={item.priority} theme={theme}>
-          {getPriorityLabel(item.priority)}
-        </PriorityText>
-      </PriorityBadge>
-      
-      <ActionButtonsContainer theme={theme}>
-        {item.actions.map((action, index) => (
-          <ActionButton 
-            key={index} 
-            onPress={() => handleActionButton(action.action, item.id)}
-            theme={theme}
-          >
-            <ActionButtonText theme={theme}>{action.label}</ActionButtonText>
-          </ActionButton>
-        ))}
-      </ActionButtonsContainer>
-    </ActionCardContainer>
-  );
-  
-  const renderPlanCard = ({ item }: { item: ActionPlan }) => (
-    <PlanCardContainer 
-      onPress={() => handleActionPlanPress(item)}
+  const renderActionCard = ({ item }: { item: ExtendedActionPlan }) => (
+    <ActionCardContainer 
+      onPress={() => handleActionPress(item)}
       theme={theme}
       priority={item.priority}
     >
       <ActionHeader theme={theme}>
         <ActionIcon priority={item.priority} theme={theme}>
           <Feather 
-            name={
-              item.indicatorId === 'uvc' 
-                ? 'package' 
-                : item.indicatorId === 'precoMedio' 
-                  ? 'dollar-sign' 
-                  : 'activity'
-            } 
+            name={getIconForPriority(item.priority)} 
             size={20} 
-            color={getIconColor(item.priority)} 
+            color={
+              item.priority === 'high' 
+                ? theme.colors.error 
+                : item.priority === 'medium' 
+                  ? theme.colors.warning 
+                  : theme.colors.primary
+            } 
           />
         </ActionIcon>
         
         <ActionInfo theme={theme}>
           <ActionTitle theme={theme}>{item.title}</ActionTitle>
-          <ActionDescription theme={theme}>
-            {item.description.length > 80 
-              ? item.description.substring(0, 80) + '...' 
-              : item.description}
-          </ActionDescription>
+          <ActionDescription theme={theme}>{item.description}</ActionDescription>
+          
+          {item.source === 'diagnostic' && (
+            <TagsContainer theme={theme}>
+              <DiagnosticTag theme={theme}>
+                <DiagnosticTagText theme={theme}>Diagnóstico</DiagnosticTagText>
+              </DiagnosticTag>
+              {item.indicatorName && (
+                <DiagnosticTag theme={theme}>
+                  <DiagnosticTagText theme={theme}>{item.indicatorName}</DiagnosticTagText>
+                </DiagnosticTag>
+              )}
+            </TagsContainer>
+          )}
         </ActionInfo>
       </ActionHeader>
       
@@ -402,54 +349,137 @@ export const ActionsScreen: React.FC = () => {
           {getStatusLabel(item.status)}
         </StatusText>
       </StatusBadge>
-    </PlanCardContainer>
+    </ActionCardContainer>
   );
   
   const renderEmptyList = () => (
     <EmptyContainer theme={theme}>
-      <Feather name="check-circle" size={48} color={theme.colors.inactive} />
-      <EmptyText theme={theme}>Nenhuma ação necessária no momento</EmptyText>
+      <Feather name="clipboard" size={48} color={theme.colors.inactive} />
+      <EmptyText theme={theme}>Nenhuma ação disponível com os filtros selecionados</EmptyText>
     </EmptyContainer>
   );
   
-  // Determinar qual renderizador e dados usar com base na categoria selecionada
-  const renderItem = selectedCategory === 'plans' ? renderPlanCard : renderActionCard;
-  const data = selectedCategory === 'plans' ? actionPlans : filteredActions;
+  const filteredActions = combinedActions();
   
   return (
     <Container theme={theme}>
       <AppHeader 
-        title="Ações Sugeridas" 
-        rightIcon={selectedCategory === 'plans' ? 'list' : undefined}
-        onRightIconPress={selectedCategory === 'plans' ? () => navigation.navigate('ActionList') : undefined}
+        title="Ações Sugeridas"
       />
       
       <FiltersContainer theme={theme}>
-        {categories.map(category => (
-          <FilterButton 
-            key={category.id} 
-            active={selectedCategory === category.id}
-            onPress={() => setSelectedCategory(category.id)}
-            theme={theme}
-          >
-            <Feather 
-              name={category.icon as any} 
-              size={16} 
-              color={selectedCategory === category.id ? '#FFFFFF' : theme.colors.text} 
-            />
-            <FilterText active={selectedCategory === category.id} theme={theme}>
-              {category.label}
-            </FilterText>
-          </FilterButton>
-        ))}
+        <FilterButton 
+          active={filter === 'all'} 
+          onPress={() => setFilter('all')}
+          theme={theme}
+        >
+          <Feather 
+            name="list" 
+            size={16} 
+            color={filter === 'all' ? '#FFFFFF' : theme.colors.text} 
+          />
+          <FilterText active={filter === 'all'} theme={theme}>
+            Todos
+          </FilterText>
+        </FilterButton>
+        
+        <FilterButton 
+          active={filter === 'pending'} 
+          onPress={() => setFilter('pending')}
+          theme={theme}
+        >
+          <Feather 
+            name="clock" 
+            size={16} 
+            color={filter === 'pending' ? '#FFFFFF' : theme.colors.text} 
+          />
+          <FilterText active={filter === 'pending'} theme={theme}>
+            Pendentes
+          </FilterText>
+        </FilterButton>
+        
+        <FilterButton 
+          active={filter === 'in_progress'} 
+          onPress={() => setFilter('in_progress')}
+          theme={theme}
+        >
+          <Feather 
+            name="trending-up" 
+            size={16} 
+            color={filter === 'in_progress' ? '#FFFFFF' : theme.colors.text} 
+          />
+          <FilterText active={filter === 'in_progress'} theme={theme}>
+            Em andamento
+          </FilterText>
+        </FilterButton>
+        
+        <FilterButton 
+          active={filter === 'completed'} 
+          onPress={() => setFilter('completed')}
+          theme={theme}
+        >
+          <Feather 
+            name="check-circle" 
+            size={16} 
+            color={filter === 'completed' ? '#FFFFFF' : theme.colors.text} 
+          />
+          <FilterText active={filter === 'completed'} theme={theme}>
+            Concluídos
+          </FilterText>
+        </FilterButton>
       </FiltersContainer>
       
+      <TypeFilterContainer theme={theme}>
+        <TypeFilterChip 
+          active={typeFilter === 'all'} 
+          onPress={() => setTypeFilter('all')}
+          theme={theme}
+        >
+          <TypeFilterText active={typeFilter === 'all'} theme={theme}>
+            Todas as Ações
+          </TypeFilterText>
+        </TypeFilterChip>
+        
+        <TypeFilterChip 
+          active={typeFilter === 'operational'} 
+          onPress={() => setTypeFilter('operational')}
+          theme={theme}
+        >
+          <TypeFilterText active={typeFilter === 'operational'} theme={theme}>
+            Operacionais
+          </TypeFilterText>
+        </TypeFilterChip>
+        
+        <TypeFilterChip 
+          active={typeFilter === 'diagnostic'} 
+          onPress={() => setTypeFilter('diagnostic')}
+          theme={theme}
+        >
+          <TypeFilterText active={typeFilter === 'diagnostic'} theme={theme}>
+            Diagnóstico
+          </TypeFilterText>
+        </TypeFilterChip>
+      </TypeFilterContainer>
+      
+      {/* Título da seção */}
+      <SectionTitle theme={theme}>
+        {typeFilter === 'all' 
+          ? 'Todas as Ações' 
+          : typeFilter === 'operational' 
+            ? 'Ações Operacionais' 
+            : 'Ações de Diagnóstico'
+        }
+      </SectionTitle>
+      
       <FlatList
-        data={data}
-        renderItem={renderItem}
-        keyExtractor={item => item.id}
+        data={filteredActions}
+        renderItem={renderActionCard}
+        keyExtractor={item => item.id} // Agora usando IDs únicos para cada item
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingTop: theme.spacing.md, paddingBottom: theme.spacing.xl }}
+        contentContainerStyle={{ 
+          flexGrow: 1,
+          paddingBottom: theme.spacing.xl 
+        }} 
         ListEmptyComponent={renderEmptyList}
       />
     </Container>

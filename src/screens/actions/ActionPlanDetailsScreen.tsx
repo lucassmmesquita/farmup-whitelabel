@@ -262,6 +262,17 @@ export const ActionPlanDetailsScreen: React.FC = () => {
     }
   };
   
+  const getStatusLabel = (status: string): string => {
+    switch (status) {
+      case 'pending': return 'Pendente';
+      case 'in_progress': return 'Em andamento';
+      case 'completed': return 'Concluído';
+      case 'validated': return 'Validado';
+      case 'rejected': return 'Rejeitado';
+      default: return 'Desconhecido';
+    }
+  };
+  
   const handleStartAction = async () => {
     if (!actionPlan) return;
     
@@ -342,7 +353,11 @@ export const ActionPlanDetailsScreen: React.FC = () => {
   
   return (
     <Container theme={theme}>
-      <AppHeader title="Plano de Ação" showBack />
+      <AppHeader 
+        title="Plano de Ação" 
+        showBack
+        subtitle={actionPlan.status ? getStatusLabel(actionPlan.status) : undefined}
+      />
       
       <ContentContainer theme={theme}>
         <SectionTitle theme={theme}>{actionPlan.title}</SectionTitle>
