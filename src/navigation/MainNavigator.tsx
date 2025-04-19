@@ -7,20 +7,21 @@ import { DashboardScreen } from '@screens/dashboard/DashboardScreen';
 import { NotificationsScreen } from '@screens/notifications/NotificationsScreen';
 import { ActionsScreen } from '@screens/actions/ActionsScreen';
 import { ProfileScreen } from '@screens/profile/ProfileScreen';
+import { DashboardNavigator } from './DashboardNavigator';
 import { useTheme } from '@hooks/useTheme';
 
 // Stack navigators para cada tab
-const DashboardStack = createStackNavigator();
+const OriginalDashboardStack = createStackNavigator();
 const NotificationsStack = createStackNavigator();
 const ActionsStack = createStackNavigator();
 const ProfileStack = createStackNavigator();
 
-// Stack Navigator para Dashboard
-const DashboardNavigator = () => (
-  <DashboardStack.Navigator screenOptions={{ headerShown: false }}>
-    <DashboardStack.Screen name="DashboardMain" component={DashboardScreen} />
+// Stack Navigator para o Dashboard Original
+const OriginalDashboardNavigator = () => (
+  <OriginalDashboardStack.Navigator screenOptions={{ headerShown: false }}>
+    <OriginalDashboardStack.Screen name="DashboardMain" component={DashboardScreen} />
     {/* Adicione outras telas relacionadas ao Dashboard aqui */}
-  </DashboardStack.Navigator>
+  </OriginalDashboardStack.Navigator>
 );
 
 // Stack Navigator para Notificações
@@ -62,6 +63,8 @@ export const MainNavigator: React.FC = () => {
           
           if (route.name === 'Dashboard') {
             iconName = 'grid';
+          } else if (route.name === 'Diagnostico') {
+            iconName = 'activity';
           } else if (route.name === 'Notifications') {
             iconName = 'bell';
           } else if (route.name === 'Actions') {
@@ -89,8 +92,13 @@ export const MainNavigator: React.FC = () => {
     >
       <Tab.Screen 
         name="Dashboard" 
-        component={DashboardNavigator} 
+        component={OriginalDashboardNavigator} 
         options={{ tabBarLabel: 'Dashboard' }}
+      />
+      <Tab.Screen 
+        name="Diagnostico" 
+        component={DashboardNavigator} 
+        options={{ tabBarLabel: 'Diagnóstico' }}
       />
       <Tab.Screen 
         name="Notifications" 
