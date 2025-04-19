@@ -1,4 +1,4 @@
-// src/navigation/MainNavigator.tsx
+// src/navigation/MainNavigator.tsx (com modificações)
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -12,6 +12,10 @@ import { ActionListScreen } from '@screens/actions/ActionListScreen';
 import { ActionPlanDetailsScreen } from '@screens/actions/ActionPlanDetailsScreen';
 import { useTheme } from '@hooks/useTheme';
 
+// Importar as novas telas de vendedores
+import SellersListScreen from '@screens/sellers/SellersListScreen';
+import SellerDetailsScreen from '@screens/sellers/SellerDetailsScreen';
+
 // Stack navigators para cada tab
 const OriginalDashboardStack = createStackNavigator();
 const NotificationsStack = createStackNavigator();
@@ -22,7 +26,10 @@ const ProfileStack = createStackNavigator();
 const OriginalDashboardNavigator = () => (
   <OriginalDashboardStack.Navigator screenOptions={{ headerShown: false }}>
     <OriginalDashboardStack.Screen name="DashboardMain" component={DashboardScreen} />
-    {/* Adicione outras telas relacionadas ao Dashboard aqui */}
+    {/* Adicionar as novas telas ao navegador do Dashboard */}
+    <OriginalDashboardStack.Screen name="SellersList" component={SellersListScreen} />
+    <OriginalDashboardStack.Screen name="SellerDetails" component={SellerDetailsScreen} />
+    <OriginalDashboardStack.Screen name="ActionPlanDetails" component={ActionPlanDetailsScreen} />
   </OriginalDashboardStack.Navigator>
 );
 

@@ -1,5 +1,5 @@
-// src/screens/dashboard/DashboardScreen.tsx
-import React, { useState } from 'react';
+// src/screens/dashboard/DashboardScreen.tsx (com modificações)
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, RefreshControl, ActivityIndicator } from 'react-native';
 import { AppHeader } from '@components/layout/AppHeader';
 import { Card } from '@components/common/Card';
@@ -8,13 +8,18 @@ import { Button } from '@components/common/Button';
 import { Feather } from '@expo/vector-icons';
 import styled from 'styled-components/native';
 import { useTheme } from '@hooks/useTheme';
+import { useNavigation } from '@react-navigation/native';
 
-// Importações dos novos componentes (agora com default)
+// Importações dos componentes do dashboard
 import MetricChart from '../../components/dashboard/MetricChart';
 import TimeRangeFilter from '../../components/dashboard/TimeRangeFilter';
 import MetricSelector from '../../components/dashboard/MetricSelector';
 import { useDashboardMetrics } from '../../hooks/useDashboardMetrics';
 
+// Importar o novo componente e serviço de vendedores
+import SellerSummaryCard from '@components/dashboard/SellerSummaryCard';
+import sellersService from '@services/api/sellersService';
+import { SellerSummary } from '@/types/sellers';
 
 // Componentes estilizados
 const Container = styled(View)`
@@ -66,6 +71,8 @@ const HeaderDateText = styled(Text)`
 
 export const DashboardScreen: React.FC = () => {
   const theme = useTheme();
+  const navigation = useNavigation();
+  
   const {
     metrics,
     isLoading,
@@ -79,6 +86,25 @@ export const DashboardScreen: React.FC = () => {
   } = useDashboardMetrics();
   
   const [refreshing, setRefreshing] = useState(false);
+  const [sellersSummary, setSellersSummary] = useState<SellerSummary | null>(null);
+  const [loadingSellers, setLoadingSellers] = useState(true);
+  
+  // Carregar resumo de vendedores
+  useEffect(() => {
+    const loadSellersSummary = async () => {
+      setLoadingSellers(true);
+      try {
+        const summary = sellersService.getSellersSummary(timeRange);
+        setSellersSummary(summary);
+      } catch (error) {
+        console.error('Erro ao carregar resumo de vendedores:', error);
+      } finally {
+        setLoadingSellers(false);
+      }
+    };
+    
+    loadSellersSummary();
+  }, [timeRange]);
   
   // Função para refrescar dados
   const onRefresh = React.useCallback(async () => {
@@ -89,6 +115,11 @@ export const DashboardScreen: React.FC = () => {
       setRefreshing(false);
     }, 1500);
   }, []);
+  
+  // Navegação para a lista de vendedores
+  const handleViewAllSellers = () => {
+    navigation.navigate('SellersList');
+  };
   
   // Obter nome legível da métrica selecionada
   const getSelectedMetricName = () => {
@@ -212,6 +243,14 @@ export const DashboardScreen: React.FC = () => {
           )}
         </KPIGrid>
         
+        {/* Resumo de Vendedores (NOVO COMPONENTE) */}
+        {sellersSummary && !loadingSellers && (
+          <SellerSummaryCard 
+            summary={sellersSummary}
+            onViewAll={handleViewAllSellers}
+          />
+        )}
+        
         {/* Seletor de métricas para o gráfico */}
         <SectionTitle theme={theme}>Análise de Desempenho</SectionTitle>
         <MetricSelector
@@ -311,6 +350,48 @@ export const DashboardScreen: React.FC = () => {
               variant="outline"
               size="small"
               onPress={() => {}}
+            />
+          </View>
+        </Card>
+        
+        {/* Nova ação sugerida voltada para vendedores */}
+        <Card elevation="light" style={{ marginBottom: theme.spacing.md }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', padding: theme.spacing.md }}>
+            <View style={{ 
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              backgroundColor: `${theme.colors.error}20`,
+              justifyContent: 'center',
+              alignItems: 'center',
+              marginRight: theme.spacing.md
+            }}>
+              <Feather name="users" size={20} color={theme.colors.error} />
+            </View>
+            
+            <View style={{ flex: 1 }}>
+              <Text style={{ 
+                fontFamily: theme.typography.fontFamily.semiBold,
+                fontSize: theme.typography.fontSize.md,
+                color: theme.colors.text,
+                marginBottom: theme.spacing.xs
+              }}>
+                Vendedor com performance crítica
+              </Text>
+              <Text style={{ 
+                fontFamily: theme.typography.fontFamily.regular,
+                fontSize: theme.typography.fontSize.sm,
+                color: theme.colors.subtext 
+              }}>
+                Rafael Oliveira precisa de atenção imediata
+              </Text>
+            </View>
+            
+            <Button 
+              title="Ver" 
+              variant="outline"
+              size="small"
+              onPress={() => navigation.navigate('SellerDetails', { sellerId: '4' })}
             />
           </View>
         </Card>
