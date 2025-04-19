@@ -11,6 +11,7 @@ export interface Indicator {
   variation: string;
   status: IndicatorStatus;
   icon: string;
+  description?: string;
   children?: Indicator[];
   parentId?: string;
   isPrimary?: boolean;
@@ -25,4 +26,26 @@ export interface IndicatorRelation {
 export interface IndicatorTree {
   indicators: Indicator[];
   relations: IndicatorRelation[];
+}
+
+export interface IndicatorHistory {
+  dates: string[];
+  values: number[];
+}
+
+export interface ActionPlan {
+  id: string;
+  indicatorId: string;
+  title: string;
+  description: string;
+  steps: string[];
+  products?: string[];
+  deadline: string;
+  priority: 'low' | 'medium' | 'high';
+  status: 'pending' | 'in_progress' | 'completed' | 'validated' | 'rejected';
+  createdAt: string;
+  updatedAt: string;
+  executionPhoto?: string;
+  validationStatus?: 'pending' | 'approved' | 'rejected';
+  validationFeedback?: string;
 }

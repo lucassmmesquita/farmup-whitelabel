@@ -13,6 +13,8 @@ interface RecommendationCardProps {
     impact: string;
     icon: string;
     action: string;
+    actionId: string;
+    priority: string;
   };
   onPress: () => void;
 }
@@ -27,6 +29,14 @@ const CardContainer = styled(View)`
   shadow-radius: 3px;
   shadow-color: #000;
   shadow-offset: 0px 2px;
+  border-left-width: 4px;
+  border-left-color: ${props => {
+    switch (props.priority) {
+      case 'high': return props.theme.colors.error;
+      case 'medium': return props.theme.colors.warning;
+      default: return props.theme.colors.primary;
+    }
+  }};
 `;
 
 const CardHeader = styled(View)`
@@ -96,7 +106,7 @@ export const RecommendationCard: React.FC<RecommendationCardProps> = ({
   const theme = useTheme();
   
   return (
-    <CardContainer theme={theme}>
+    <CardContainer theme={theme} priority={recommendation.priority}>
       <CardHeader theme={theme}>
         <IconContainer theme={theme}>
           <Feather 

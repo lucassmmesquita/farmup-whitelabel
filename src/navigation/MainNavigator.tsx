@@ -8,6 +8,8 @@ import { NotificationsScreen } from '@screens/notifications/NotificationsScreen'
 import { ActionsScreen } from '@screens/actions/ActionsScreen';
 import { ProfileScreen } from '@screens/profile/ProfileScreen';
 import { DashboardNavigator } from './DashboardNavigator';
+import { ActionListScreen } from '@screens/actions/ActionListScreen';
+import { ActionPlanDetailsScreen } from '@screens/actions/ActionPlanDetailsScreen';
 import { useTheme } from '@hooks/useTheme';
 
 // Stack navigators para cada tab
@@ -36,7 +38,8 @@ const NotificationsNavigator = () => (
 const ActionsNavigator = () => (
   <ActionsStack.Navigator screenOptions={{ headerShown: false }}>
     <ActionsStack.Screen name="ActionsMain" component={ActionsScreen} />
-    {/* Adicione outras telas relacionadas às Ações aqui */}
+    <ActionsStack.Screen name="ActionList" component={ActionListScreen} />
+    <ActionsStack.Screen name="ActionPlanDetails" component={ActionPlanDetailsScreen} />
   </ActionsStack.Navigator>
 );
 

@@ -5,6 +5,7 @@ import styled from 'styled-components/native';
 import { useTheme } from '@hooks/useTheme';
 import { Indicator } from '@/types/metrics';
 import IndicatorCard from './IndicatorCard';
+import Svg, { Line } from 'react-native-svg';
 
 interface HierarchyTreeProps {
   indicatorTree: {
@@ -35,6 +36,7 @@ const LevelContainer = styled(View)`
   flex-direction: row;
   justify-content: space-between;
   margin-bottom: ${props => props.theme.spacing.xl}px;
+  position: relative;
 `;
 
 const IndicatorContainer = styled(View)`
@@ -50,11 +52,13 @@ const SectionTitle = styled(Text)`
   margin-top: ${props => props.theme.spacing.md}px;
 `;
 
-const ArrowLine = styled(View)`
-  height: 2px;
-  background-color: ${props => props.theme.colors.primary};
-  width: 100%;
-  margin: ${props => props.theme.spacing.sm}px 0;
+const ConnectionsContainer = styled(View)`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
 `;
 
 export const HierarchyTree: React.FC<HierarchyTreeProps> = ({
@@ -72,14 +76,25 @@ export const HierarchyTree: React.FC<HierarchyTreeProps> = ({
     return indicatorTree.indicators.filter(i => i.parentId === parentId);
   };
   
-  // Render simplificado sem conectores SVG para facilitar a implementação inicial
+  // Encontrar um indicador pelo ID
+  const getIndicatorById = (id: string) => {
+    return indicatorTree.indicators.find(i => i.id === id);
+  };
+
+  // Encontrar todos os indicadores que impactam um determinado indicador
+  const getImpactingIndicators = (targetId: string) => {
+    const relationships = indicatorTree.relations.filter(r => r.targetId === targetId);
+    return relationships.map(r => getIndicatorById(r.sourceId)).filter(Boolean) as Indicator[];
+  };
+  
+  // Renderizar uma visualização hierárquica
   return (
     <Container theme={theme}>
       <ScrollContainer>
         <TreeContainer theme={theme}>
           <SectionTitle theme={theme}>Árvore de Diagnóstico</SectionTitle>
           
-          {/* Nível 1: Faturamento */}
+          {/* Nível 1: Faturamento (Topo da hierarquia) */}
           <LevelContainer theme={theme}>
             {getRootIndicators().map(indicator => (
               <IndicatorContainer key={indicator.id} theme={theme}>
@@ -92,26 +107,11 @@ export const HierarchyTree: React.FC<HierarchyTreeProps> = ({
             ))}
           </LevelContainer>
           
-          {/* Nível 2: Ticket Médio e Qtd Cupons */}
+          {/* Nível 2: Tickey Médio e Qtd Cupons (Nível do meio) */}
           <LevelContainer theme={theme}>
-            {getRootIndicators().flatMap(root => 
-              getChildrenByParentId(root.id).map(indicator => (
-                <IndicatorContainer key={indicator.id} theme={theme}>
-                  <IndicatorCard 
-                    indicator={indicator}
-                    onPress={onSelectIndicator}
-                    size="medium"
-                  />
-                </IndicatorContainer>
-              ))
-            )}
-          </LevelContainer>
-          
-          {/* Nível 3: UVC e Preço Médio */}
-          <LevelContainer theme={theme}>
-            {getRootIndicators().flatMap(root => 
-              getChildrenByParentId(root.id).flatMap(level2 =>
-                getChildrenByParentId(level2.id).map(indicator => (
+            {getRootIndicators().length > 0 && 
+              getRootIndicators().flatMap(root => 
+                getImpactingIndicators(root.id).map(indicator => (
                   <IndicatorContainer key={indicator.id} theme={theme}>
                     <IndicatorCard 
                       indicator={indicator}
@@ -120,6 +120,23 @@ export const HierarchyTree: React.FC<HierarchyTreeProps> = ({
                     />
                   </IndicatorContainer>
                 ))
+            )}
+          </LevelContainer>
+          
+          {/* Nível 3: UVC e Preço Médio (Último nível - indicadores primários) */}
+          <LevelContainer theme={theme}>
+            {getRootIndicators().length > 0 && 
+              getRootIndicators().flatMap(root => 
+                getImpactingIndicators(root.id).flatMap(level2 =>
+                  getImpactingIndicators(level2.id).map(indicator => (
+                    <IndicatorContainer key={indicator.id} theme={theme}>
+                      <IndicatorCard 
+                        indicator={indicator}
+                        onPress={onSelectIndicator}
+                        size="medium"
+                      />
+                    </IndicatorContainer>
+                  ))
               )
             )}
           </LevelContainer>

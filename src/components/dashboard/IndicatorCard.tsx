@@ -22,9 +22,9 @@ const getStatusColor = (status: IndicatorStatus, theme: any) => {
 
 const getStatusIcon = (status: IndicatorStatus) => {
   switch (status) {
-    case 'above': return 'check-circle';
-    case 'below': return 'x-circle';
-    default: return 'minus-circle';
+    case 'above': return 'trending-up';
+    case 'below': return 'trending-down';
+    default: return 'minus';
   }
 };
 
@@ -64,6 +64,7 @@ const IndicatorName = styled(Text)<{ size: string }>`
     }
   }}px;
   color: ${props => props.theme.colors.text};
+  max-width: 80%;
 `;
 
 const StatusBadge = styled(View)<{ status: IndicatorStatus }>`
@@ -117,6 +118,23 @@ const VariationText = styled(Text)<{ status: IndicatorStatus }>`
   color: ${props => getStatusColor(props.status, props.theme)};
 `;
 
+const PrimaryIndicatorBadge = styled(View)`
+  position: absolute;
+  top: 0;
+  right: 0;
+  background-color: ${props => props.theme.colors.accent};
+  padding-horizontal: ${props => props.theme.spacing.xs}px;
+  padding-vertical: 2px;
+  border-top-right-radius: ${props => props.theme.roundness.md}px;
+  border-bottom-left-radius: ${props => props.theme.roundness.md}px;
+`;
+
+const PrimaryIndicatorText = styled(Text)`
+  color: white;
+  font-size: 8px;
+  font-family: ${props => props.theme.typography.fontFamily.medium};
+`;
+
 export const IndicatorCard: React.FC<IndicatorCardProps> = ({
   indicator,
   onPress,
@@ -131,8 +149,14 @@ export const IndicatorCard: React.FC<IndicatorCardProps> = ({
       size={size}
       theme={theme}
     >
+      {indicator.isPrimary && (
+        <PrimaryIndicatorBadge theme={theme}>
+          <PrimaryIndicatorText theme={theme}>PRIMÁRIO</PrimaryIndicatorText>
+        </PrimaryIndicatorBadge>
+      )}
+      
       <CardHeader theme={theme}>
-        <IndicatorName size={size} theme={theme}>
+        <IndicatorName size={size} theme={theme} numberOfLines={1}>
           {indicator.name}
         </IndicatorName>
         
@@ -162,7 +186,11 @@ export const IndicatorCard: React.FC<IndicatorCardProps> = ({
         <MetricRow theme={theme}>
           <MetricLabel theme={theme}>Variação</MetricLabel>
           <VariationText status={indicator.status} theme={theme}>
-            {indicator.variation}
+            <Feather 
+              name={getStatusIcon(indicator.status)} 
+              size={12} 
+              color={getStatusColor(indicator.status, theme)} 
+            /> {indicator.variation}
           </VariationText>
         </MetricRow>
       </CardContent>
