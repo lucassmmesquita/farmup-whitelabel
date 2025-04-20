@@ -16,6 +16,9 @@ import { ActionPlanDetailsScreen } from '@screens/actions/ActionPlanDetailsScree
 import { ProfileScreen } from '@screens/profile/ProfileScreen';
 import SellersListScreen from '@screens/sellers/SellersListScreen';
 import SellerDetailsScreen from '@screens/sellers/SellerDetailsScreen';
+import HierarchyDashboardScreen from '@screens/dashboard/HierarchyDashboardScreen';
+
+import { CommonActions } from '@react-navigation/native';
 
 // Stack Navigators
 const OriginalDashboardStack = createStackNavigator();
@@ -49,11 +52,19 @@ const OriginalDashboardTabNavigator = () => (
 );
 
 // Stack Navigator para o novo Diagnóstico (que é o atual Dashboard)
-const DiagnosticTabNavigator = () => (
-  <DiagnosticStack.Navigator screenOptions={{ headerShown: false }}>
-    <DiagnosticStack.Screen name="DiagnosticMain" component={DashboardNavigator} />
-  </DiagnosticStack.Navigator>
-);
+const DiagnosticTabNavigator = () => {
+  const navigationRef = React.useRef(null);
+
+  return (
+    <DiagnosticStack.Navigator 
+      screenOptions={{ headerShown: false }}
+      // Adicione a referência aqui
+      ref={navigationRef}
+    >
+      <DiagnosticStack.Screen name="DiagnosticMain" component={DashboardNavigator} />
+    </DiagnosticStack.Navigator>
+  );
+};
 
 // Stack Navigator para Equipe
 const TeamTabNavigator = () => (

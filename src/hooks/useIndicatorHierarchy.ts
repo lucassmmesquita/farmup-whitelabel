@@ -42,8 +42,15 @@ export const useIndicatorHierarchy = () => {
     }
   };
   
-  const getChildIndicators = (parentId: string): Indicator[] => {
+  const getChildIndicators = (parentId: string, flowType?: 'faturamento' | 'cupom'): Indicator[] => {
     if (!indicatorTree) return [];
+    
+    if (flowType) {
+      return indicatorTree.indicators.filter(i => 
+        i.parentId === parentId && i.flowType === flowType
+      );
+    }
+    
     return indicatorTree.indicators.filter(i => i.parentId === parentId);
   };
   
@@ -56,8 +63,18 @@ export const useIndicatorHierarchy = () => {
     return indicatorTree.indicators.find(i => i.id === child.parentId);
   };
   
-  const getRelations = (indicatorId: string) => {
+  const getRelations = (indicatorId: string, flowType?: 'faturamento' | 'cupom') => {
     if (!indicatorTree) return { incoming: [], outgoing: [] };
+    
+    if (flowType) {
+      const incoming = indicatorTree.relations.filter(r => 
+        r.targetId === indicatorId && r.flowType === flowType
+      );
+      const outgoing = indicatorTree.relations.filter(r => 
+        r.sourceId === indicatorId && r.flowType === flowType
+      );
+      return { incoming, outgoing };
+    }
     
     const incoming = indicatorTree.relations.filter(r => r.targetId === indicatorId);
     const outgoing = indicatorTree.relations.filter(r => r.sourceId === indicatorId);
@@ -65,15 +82,39 @@ export const useIndicatorHierarchy = () => {
     return { incoming, outgoing };
   };
   
-  const getPrimaryIndicators = (): Indicator[] => {
+  const getPrimaryIndicators = (flowType?: 'faturamento' | 'cupom'): Indicator[] => {
     if (!indicatorTree) return [];
+    
+    if (flowType) {
+      return indicatorTree.indicators.filter(i => 
+        i.isPrimary && i.flowType === flowType
+      );
+    }
+    
     return indicatorTree.indicators.filter(i => i.isPrimary);
+  };
+  
+  const getRootIndicators = (flowType?: 'faturamento' | 'cupom'): Indicator[] => {
+    if (!indicatorTree) return [];
+    
+    if (flowType) {
+      return indicatorTree.indicators.filter(i => 
+        !i.parentId && i.flowType === flowType
+      );
+    }
+    
+    return indicatorTree.indicators.filter(i => !i.parentId);
   };
   
   const isActionable = (indicatorId: string): boolean => {
     if (!indicatorTree) return false;
     const indicator = indicatorTree.indicators.find(i => i.id === indicatorId);
     return indicator?.isPrimary === true;
+  };
+  
+  const getIndicatorsByFlowType = (flowType: 'faturamento' | 'cupom'): Indicator[] => {
+    if (!indicatorTree) return [];
+    return indicatorTree.indicators.filter(i => i.flowType === flowType);
   };
   
   return {
@@ -86,7 +127,9 @@ export const useIndicatorHierarchy = () => {
     getParentIndicator,
     getRelations,
     getPrimaryIndicators,
+    getRootIndicators,
     isActionable,
+    getIndicatorsByFlowType,
     refresh: loadIndicatorTree
   };
 };

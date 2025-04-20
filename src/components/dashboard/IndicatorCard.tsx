@@ -135,6 +135,23 @@ const PrimaryIndicatorText = styled(Text)`
   font-family: ${props => props.theme.typography.fontFamily.medium};
 `;
 
+const FlowTypeTag = styled(View)`
+  position: absolute;
+  top: 0;
+  right: 30px;
+  background-color: ${props => props.theme.colors.primary}15;
+  padding-horizontal: ${props => props.theme.spacing.xs}px;
+  padding-vertical: 2px;
+  border-top-right-radius: 0;
+  border-bottom-left-radius: ${props => props.theme.roundness.md}px;
+`;
+
+const FlowTypeText = styled(Text)`
+  color: ${props => props.theme.colors.primary};
+  font-size: 8px;
+  font-family: ${props => props.theme.typography.fontFamily.medium};
+`;
+
 export const IndicatorCard: React.FC<IndicatorCardProps> = ({
   indicator,
   onPress,
@@ -142,17 +159,38 @@ export const IndicatorCard: React.FC<IndicatorCardProps> = ({
 }) => {
   const theme = useTheme();
   
+  const getFlowTypeShortLabel = (flowType?: string) => {
+    switch(flowType) {
+      case 'faturamento': return 'FAT';
+      case 'cupom': return 'CUP';
+      default: return '';
+    }
+  };
+  
   return (
     <CardContainer 
-      onPress={() => onPress(indicator)}
-      status={indicator.status}
-      size={size}
-      theme={theme}
+        onPress={() => {
+            // Adicionamos uma verificação de segurança antes de chamar onPress
+            if (typeof onPress === 'function') {
+            onPress(indicator);
+            }
+        }}
+        status={indicator.status}
+        size={size}
+        theme={theme}
     >
       {indicator.isPrimary && (
         <PrimaryIndicatorBadge theme={theme}>
           <PrimaryIndicatorText theme={theme}>PRIMÁRIO</PrimaryIndicatorText>
         </PrimaryIndicatorBadge>
+      )}
+      
+      {indicator.flowType && size === 'small' && (
+        <FlowTypeTag theme={theme}>
+          <FlowTypeText theme={theme}>
+            {getFlowTypeShortLabel(indicator.flowType)}
+          </FlowTypeText>
+        </FlowTypeTag>
       )}
       
       <CardHeader theme={theme}>

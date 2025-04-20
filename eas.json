@@ -1,18 +1,34 @@
 {
-    "cli": {
-      "version": ">= 3.0.0"
+  "cli": {
+    "version": ">= 3.0.0"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": {
+        "resourceClass": "m1-medium"
+      }
     },
-    "build": {
-      "development": {
-        "developmentClient": true,
-        "distribution": "internal"
-      },
-      "preview": {
-        "distribution": "internal"
-      },
-      "production": {}
+    "preview": {
+      "distribution": "internal",
+      "ios": {
+        "resourceClass": "m1-medium"
+      }
     },
-    "submit": {
-      "production": {}
+    "production": {
+      "ios": {
+        "resourceClass": "m1-medium"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "lucasmesquitati@gmail.com",
+        "ascAppId": "adicionar_seu_app_store_id_aqui",
+        "appleTeamId": "adicionar_seu_team_id_aqui"
+      }
     }
   }
+}

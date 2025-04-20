@@ -6,7 +6,7 @@ import {
   ScrollView, 
   Alert, 
   ActivityIndicator, 
-  TouchableOpacity, // Adicionar esta importação
+  TouchableOpacity, 
   Dimensions 
 } from 'react-native';
 import { AppHeader } from '@components/layout/AppHeader';
@@ -22,11 +22,22 @@ import { LineChart } from 'react-native-chart-kit';
 import hierarchyService from '@/services/api/hierarchyService';
 import { Button } from '@components/common/Button';
 
+// Definir tipos para a navegação e a rota
+type IndicatorDetailsRouteProp = RouteProp<DashboardStackParamList, 'IndicatorDetails'>;
+type IndicatorDetailsNavigationProp = StackNavigationProp<DashboardStackParamList, 'IndicatorDetails'>;
+
+
 type RouteParams = {
   IndicatorDetails: {
     indicator: Indicator;
   };
 };
+
+const LoadingContainer = styled(View)`
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+`;
 
 const Container = styled(View)`
   flex: 1;
@@ -144,6 +155,21 @@ const PeriodButtonText = styled(Text)<{ active: boolean }>`
   color: ${props => props.active ? '#FFFFFF' : props.theme.colors.primary};
 `;
 
+const FlowTypeTag = styled(View)`
+  background-color: ${props => props.theme.colors.primary}15;
+  padding-horizontal: ${props => props.theme.spacing.md}px;
+  padding-vertical: ${props => props.theme.spacing.xs}px;
+  border-radius: ${props => props.theme.roundness.full}px;
+  align-self: flex-start;
+  margin-bottom: ${props => props.theme.spacing.md}px;
+`;
+
+const FlowTypeText = styled(Text)`
+  font-family: ${props => props.theme.typography.fontFamily.medium};
+  font-size: ${props => props.theme.typography.fontSize.sm}px;
+  color: ${props => props.theme.colors.primary};
+`;
+
 export const IndicatorDetailsScreen: React.FC = () => {
   const theme = useTheme();
   const route = useRoute<RouteProp<RouteParams, 'IndicatorDetails'>>();
@@ -217,6 +243,57 @@ export const IndicatorDetailsScreen: React.FC = () => {
     }
   };
   
+  const getFlowTypeLabel = (flowType?: string) => {
+    switch(flowType) {
+      case 'faturamento': return 'Diagnóstico por Faturamento';
+      case 'cupom': return 'Diagnóstico por Cupom';
+      default: return 'Diagnóstico';
+    }
+  };
+  
+  // Obter texto explicativo específico por indicador
+  const getIndicatorExplanation = (indicator: Indicator) => {
+    const explanations: {[key: string]: string} = {
+      // Fluxo de Faturamento
+      'faturamento': 'O faturamento total da loja é influenciado pelo ticket médio multiplicado pelo número de cupons emitidos. Para melhorar esse indicador, foque nas ações recomendadas para ticket médio.',
+      'ticketMedio': 'O Ticket Médio é um indicador composto, resultante da multiplicação de UVC (unidades por cupom) e Preço Médio. Para melhorar este indicador, foque nas ações recomendadas para UVC e Preço Médio.',
+      'uvc': 'A Unidade Vendida por Cliente (UVC) representa quantos itens cada cliente leva em média. É influenciada diretamente pela aderência ao estoque ideal e pela proporção de genéricos versus referência.',
+      'precoMedio': 'O Preço Médio é o valor médio dos produtos vendidos. É influenciado principalmente pelo índice de competitividade em relação ao mercado local.',
+      'aderenciaEstoque': 'A Aderência ao Estoque Ideal mede quanto o estoque atual está alinhado com o mix ideal para produtos recorrentes. Melhorar esse indicador pode aumentar significativamente o UVC.',
+      'proporcaoGenericos': 'A Proporção entre Medicamentos Genéricos e de Referência afeta diretamente o UVC. Oferecer opções de genéricos pode aumentar a quantidade de itens que o cliente adquire.',
+      'indiceCompetitividade': 'O Índice de Competitividade compara os preços praticados com os do mercado local. Um índice maior significa preços mais atraentes em relação à concorrência.',
+      
+      // Fluxo de Cupom
+      'qtdCupons': 'A quantidade de cupons emitidos é influenciada pelo fluxo de pessoas na loja e pela taxa de conversão. Melhorar esses dois indicadores aumentará o número de vendas realizadas.',
+      'fluxoPessoas': 'O fluxo de pessoas representa quantos clientes entram na loja. É o primeiro passo do funil de vendas e pode ser melhorado com ações de marketing local.',
+      'taxaConversao': 'A taxa de conversão mede quantos entrantes efetivamente realizaram compras. É influenciada por diversos fatores operacionais como sortimento, ruptura e disponibilidade de PBM.',
+      'entrantes': 'Representa as pessoas que entram na loja, classificadas em segmentos específicos. Conhecer esses públicos permite estratégias direcionadas.',
+      'cronicos': 'Os clientes crônicos são aqueles que buscam medicamentos de uso contínuo. Representam uma oportunidade de fidelização e aumento de receita recorrente.',
+      'idosos': 'Os clientes idosos são identificados pela IA de câmeras. São um público importante que requer estratégias específicas de atendimento e acessibilidade.',
+      'percentualSortimento': 'O percentual de sortimento mede o quanto o mix de produtos está adequado ao perfil da loja. Um sortimento otimizado aumenta a taxa de conversão.',
+      'deixeiDeVender': 'O indicador "Deixei de Vender" mede as vendas perdidas por diversos motivos. Reduzir esse percentual impacta diretamente a taxa de conversão.',
+      'percentualRuptura': 'O percentual de ruptura indica produtos indisponíveis devido à falta de estoque. Reduzir a ruptura melhora a taxa de conversão e a satisfação dos clientes.',
+      'disponibilidadePBM': 'A disponibilidade de Programas de Benefício em Medicamentos (PBM) afeta a decisão de compra. Ampliar a cobertura de PBMs aumenta a conversão.',
+      'conversaoPBM': 'A conversão de produtos PBM mede o sucesso na oferta desses programas aos clientes elegíveis. Melhorar esse processo aumenta as vendas com benefícios.'
+    };
+    
+    return explanations[indicator.id] || indicator.description || '';
+  };
+  
+  if (loading) {
+    return (
+      <Container theme={theme}>
+        <AppHeader 
+          title={indicator.name}
+          showBack
+        />
+        <LoadingContainer>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+        </LoadingContainer>
+      </Container>
+    );
+  }
+  
   return (
     <Container theme={theme}>
       <AppHeader 
@@ -225,6 +302,15 @@ export const IndicatorDetailsScreen: React.FC = () => {
       />
       
       <ContentContainer theme={theme}>
+        {/* Tag do tipo de fluxo */}
+        {indicator.flowType && (
+          <FlowTypeTag theme={theme}>
+            <FlowTypeText theme={theme}>
+              {getFlowTypeLabel(indicator.flowType)}
+            </FlowTypeText>
+          </FlowTypeTag>
+        )}
+        
         {/* Card principal do indicador */}
         <IndicatorCard 
           indicator={indicator}
@@ -232,11 +318,9 @@ export const IndicatorDetailsScreen: React.FC = () => {
           size="large"
         />
         
-        {indicator.description && (
-          <InfoText theme={theme}>
-            {indicator.description}
-          </InfoText>
-        )}
+        <InfoText theme={theme}>
+          {getIndicatorExplanation(indicator)}
+        </InfoText>
         
         {/* Histórico do indicador */}
         <SectionTitle theme={theme}>Histórico</SectionTitle>
@@ -399,16 +483,43 @@ export const IndicatorDetailsScreen: React.FC = () => {
           </>
         )}
         
-        {/* Texto explicativo para indicadores não primários */}
-        {!isActionable(indicator.id) && (
+        {/* Explicações para diferentes tipos de indicadores */}
+        {!isActionable(indicator.id) && indicator.id === 'ticketMedio' && (
           <>
             <SectionTitle theme={theme}>Análise Causal</SectionTitle>
             <InfoText theme={theme}>
-              {indicator.id === 'ticketMedio' 
-                ? 'O Ticket Médio é um indicador composto, resultante da multiplicação de UVC (unidades por cupom) e Preço Médio. Para melhorar este indicador, foque nas ações recomendadas para UVC e Preço Médio.'
-                : indicator.id === 'faturamento'
-                ? 'O Faturamento é influenciado diretamente pela quantidade de cupons e pelo ticket médio. Analise esses indicadores para identificar oportunidades de melhoria.'
-                : 'Este indicador não possui ações diretas recomendadas. Analise os indicadores relacionados para identificar oportunidades de melhoria.'}
+              O Ticket Médio é um indicador composto, resultante da multiplicação de UVC (unidades por cupom) e Preço Médio. 
+              Para melhorar este indicador, foque nas ações recomendadas para UVC e Preço Médio.
+            </InfoText>
+          </>
+        )}
+        
+        {!isActionable(indicator.id) && indicator.id === 'faturamento' && (
+          <>
+            <SectionTitle theme={theme}>Análise Causal</SectionTitle>
+            <InfoText theme={theme}>
+              O Faturamento é influenciado diretamente pela quantidade de cupons e pelo ticket médio. 
+              Analise esses indicadores para identificar oportunidades de melhoria.
+            </InfoText>
+          </>
+        )}
+        
+        {!isActionable(indicator.id) && indicator.id === 'qtdCupons' && (
+          <>
+            <SectionTitle theme={theme}>Análise Causal</SectionTitle>
+            <InfoText theme={theme}>
+              A quantidade de cupons emitidos é influenciada pelo fluxo de pessoas na loja e pela taxa de conversão. 
+              Melhorar esses dois indicadores aumentará o número de vendas realizadas.
+            </InfoText>
+          </>
+        )}
+        
+        {!isActionable(indicator.id) && indicator.id !== 'faturamento' && indicator.id !== 'ticketMedio' && indicator.id !== 'qtdCupons' && (
+          <>
+            <SectionTitle theme={theme}>Análise Causal</SectionTitle>
+            <InfoText theme={theme}>
+              Este indicador não possui ações diretas recomendadas. Analise os indicadores relacionados 
+              para identificar oportunidades de melhoria.
             </InfoText>
           </>
         )}

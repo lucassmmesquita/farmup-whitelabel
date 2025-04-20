@@ -15,12 +15,14 @@ export interface Indicator {
   children?: Indicator[];
   parentId?: string;
   isPrimary?: boolean;
+  flowType?: 'faturamento' | 'cupom'; // Novo campo para diferenciar os fluxos
 }
 
 export interface IndicatorRelation {
   sourceId: string;
   targetId: string;
   impact: number; // 0 a 1 para representar o peso da relação
+  flowType?: 'faturamento' | 'cupom'; // Novo campo para diferenciar os fluxos
 }
 
 export interface IndicatorTree {
