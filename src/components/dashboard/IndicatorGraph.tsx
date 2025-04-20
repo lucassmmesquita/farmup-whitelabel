@@ -179,8 +179,10 @@ const IndicatorGraph: React.FC<IndicatorGraphProps> = ({
   flowType
 }) => {
   const theme = useTheme();
-  const svgRef = useRef<Svg>(null);
+  // Removendo a ref para o Svg que causava o erro
+  // const svgRef = useRef<Svg>(null);
   const simulationRef = useRef<d3.Simulation<GraphNode, GraphLink> | null>(null);
+  const lastDistanceRef = useRef<number>(0);
   
   // Estado para o nó selecionado
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
@@ -391,15 +393,15 @@ const IndicatorGraph: React.FC<IndicatorGraphProps> = ({
           const distance = Math.sqrt(dx * dx + dy * dy);
           
           // Comparar com a distância anterior para determinar o zoom
-          if (panResponder.current.lastDistance) {
-            const change = distance / panResponder.current.lastDistance;
+          if (lastDistanceRef.current > 0) {
+            const change = distance / lastDistanceRef.current;
             // Limitar o zoom entre 0.5 e 3
             const newScale = Math.min(Math.max(scale * change, 0.5), 3);
             setScale(newScale);
           }
           
           // Salvar a distância atual para comparação
-          panResponder.current.lastDistance = distance;
+          lastDistanceRef.current = distance;
         } else if (event.nativeEvent.touches.length === 1) {
           // Para pan (arrastar)
           setTranslateX(translateX + gestureState.dx);
@@ -409,7 +411,7 @@ const IndicatorGraph: React.FC<IndicatorGraphProps> = ({
       
       onPanResponderRelease: () => {
         // Resetar a distância quando os dedos são levantados
-        panResponder.current.lastDistance = 0;
+        lastDistanceRef.current = 0;
       }
     })
   ).current;
@@ -495,7 +497,7 @@ const IndicatorGraph: React.FC<IndicatorGraphProps> = ({
         {...panResponder.panHandlers}
       >
         <Svg
-          ref={svgRef}
+          // Removendo a ref aqui
           width={screenWidth}
           height={screenHeight}
           style={{ backgroundColor: theme.colors.background }}
