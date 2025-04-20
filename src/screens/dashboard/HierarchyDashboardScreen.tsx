@@ -150,7 +150,7 @@ export const HierarchyDashboardScreen: React.FC = () => {
   if (loading && !refreshing) {
     return (
       <Container theme={theme}>
-        <AppHeader title="Dashboard de KPIs" rightIcon="bell" onRightIconPress={() => {}} />
+        <AppHeader title="Diagnóstico de KPIs" rightIcon="bell" onRightIconPress={() => {}} />
         <LoadingContainer>
           <ActivityIndicator size="large" color={theme.colors.primary} />
           <Text style={{ marginTop: 16, color: theme.colors.subtext }}>
