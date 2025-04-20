@@ -1,11 +1,13 @@
 // src/components/layout/AppHeader.tsx
+
 import React from 'react';
-import { View, Text, TouchableOpacity, Image, StatusBar, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, Image, StatusBar, ScrollView, Platform } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import styled from 'styled-components/native';
 import { useTheme } from '@hooks/useTheme';
 import { useClientConfig } from '@hooks/useClientConfig';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface BreadcrumbItem {
   label: string;
@@ -28,7 +30,6 @@ const HeaderContainer = styled(View)`
   background-color: ${props => props.theme.colors.background};
   border-bottom-width: 1px;
   border-bottom-color: ${props => props.theme.colors.border};
-  padding-top: ${props => props.theme.spacing.sm}px;
 `;
 
 const HeaderTop = styled(View)`
@@ -116,7 +117,6 @@ const BreadcrumbSeparator = styled(Text)`
 `;
 
 // Mapear rotas para breadcrumbs
-// Em uma implementação real, seria melhor mover isso para um utilitário separado
 const getBreadcrumbsForRoute = (routeName: string) => {
   // Implementação simplificada - em um caso real, isso seria mais dinâmico
   switch (routeName) {
@@ -157,6 +157,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   const theme = useTheme();
   const { name, logoUrl } = useClientConfig();
   const route = useRoute();
+  const insets = useSafeAreaInsets();
   
   // Obter breadcrumbs automaticamente se não forem fornecidos
   const routeBreadcrumbs = breadcrumbs || getBreadcrumbsForRoute(route.name);
@@ -178,7 +179,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         barStyle="dark-content" 
         backgroundColor={theme.colors.background} 
       />
-      <HeaderContainer theme={theme}>
+      <HeaderContainer theme={theme} style={{ paddingTop: insets.top }}>
         <HeaderTop theme={theme}>
           <IconButton
             onPress={showBack ? () => navigation.goBack() : undefined}

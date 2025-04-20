@@ -1,11 +1,13 @@
 // src/navigation/MainNavigator.tsx
+
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Feather } from '@expo/vector-icons';
-import { View } from 'react-native';
+import { View, Platform } from 'react-native';
 import { useTheme } from '@hooks/useTheme';
 import styled from 'styled-components/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Importar navegadores e telas
 import { DashboardScreen } from '@screens/dashboard/DashboardScreen';
@@ -27,19 +29,39 @@ const TeamStack = createStackNavigator();
 const ActionsStack = createStackNavigator();
 const ProfileStack = createStackNavigator();
 
-// Estilização para o ícone da tab
-const IconBadge = styled(View)<{ focused: boolean }>`
-  width: 5px;
-  height: 5px;
-  border-radius: 2.5px;
-  background-color: ${props => props.focused ? props.theme.colors.primary : 'transparent'};
-  margin-top: 4px;
-`;
-
-const IconContainer = styled(View)`
+// Estilização para o ícone da tab - agora com melhor posicionamento
+const TabIconContainer = styled(View)`
+  flex: 1;
   align-items: center;
   justify-content: center;
 `;
+
+const IconWrapper = styled(View)`
+  align-items: center;
+  justify-content: center;
+`;
+
+const IconBadge = styled(View)<{ focused: boolean }>`
+  width: 4px;
+  height: 4px;
+  border-radius: 2px;
+  background-color: ${props => props.focused ? props.theme.colors.primary : 'transparent'};
+  margin-top: 1px;
+`;
+
+// Custom Tab Bar Icon Component
+const TabBarIcon = ({ focused, color, size, name }: { focused: boolean; color: string; size: number; name: keyof typeof Feather.glyphMap }) => {
+  const theme = useTheme();
+  
+  return (
+    <TabIconContainer>
+      <IconWrapper>
+        <Feather name={name} size={size} color={color} />
+        <IconBadge focused={focused} theme={theme} />
+      </IconWrapper>
+    </TabIconContainer>
+  );
+};
 
 // Stack Navigator para o Dashboard Original (com indicadores e análise de desempenho)
 const OriginalDashboardTabNavigator = () => (
@@ -58,7 +80,6 @@ const DiagnosticTabNavigator = () => {
   return (
     <DiagnosticStack.Navigator 
       screenOptions={{ headerShown: false }}
-      // Adicione a referência aqui
       ref={navigationRef}
     >
       <DiagnosticStack.Screen name="DiagnosticMain" component={DashboardNavigator} />
@@ -96,6 +117,7 @@ const Tab = createBottomTabNavigator();
 
 export const MainNavigator: React.FC = () => {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   
   // Em uma implementação real, isso viria do contexto de autenticação
   const userRole = 'manager'; // Mock - valores possíveis: 'admin', 'manager', 'operator', 'owner'
@@ -103,6 +125,9 @@ export const MainNavigator: React.FC = () => {
   // Verificação do perfil do usuário para mostrar ou não algumas tabs
   const showTeamTab = ['admin', 'manager', 'owner'].includes(userRole);
   
+  // Calcular a altura ideal da TabBar considerando a área segura do dispositivo
+  const tabBarHeight = Platform.OS === 'ios' ? 50 + insets.bottom : 58;
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -122,25 +147,31 @@ export const MainNavigator: React.FC = () => {
             iconName = 'user';
           }
           
-          return (
-            <IconContainer>
-              <Feather name={iconName} size={size} color={color} />
-              <IconBadge focused={focused} theme={theme} />
-            </IconContainer>
-          );
+          return <TabBarIcon focused={focused} color={color} size={size} name={iconName} />;
         },
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.inactive,
         tabBarStyle: {
+          height: tabBarHeight,
           borderTopWidth: 1,
           borderTopColor: theme.colors.border,
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 8,
+          paddingTop: 5,
+          paddingBottom: Platform.OS === 'ios' ? insets.bottom : 5,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 3,
+          elevation: 5,
+          backgroundColor: theme.colors.background,
         },
         tabBarLabelStyle: {
           fontFamily: theme.typography.fontFamily.medium,
-          fontSize: 12,
+          fontSize: 11,
+          marginTop: 0,
+          paddingTop: 0,
+        },
+        tabBarItemStyle: {
+          paddingTop: 5,
         },
       })}
     >

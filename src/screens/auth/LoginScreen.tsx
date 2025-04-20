@@ -1,5 +1,5 @@
 // src/screens/auth/LoginScreen.tsx
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { View, Text, TextInput, StyleSheet, Image, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -10,6 +10,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '@hooks/useTheme';
 import { useClientConfig } from '@hooks/useClientConfig';
 import styled from 'styled-components/native';
+import { CommonActions } from '@react-navigation/native';
 
 type LoginScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'Login'>;
 
@@ -101,7 +102,7 @@ const ForgotPasswordText = styled(Text)`
 `;
 
 export const LoginScreen: React.FC = () => {
-  const navigation = useNavigation<LoginScreenNavigationProp>();
+  const navigation = useNavigation();
   const theme = useTheme();
   const { name, logoUrl } = useClientConfig();
   
@@ -120,33 +121,40 @@ export const LoginScreen: React.FC = () => {
     
     try {
       // Simulação de login (substituir por chamada real à API)
-      setTimeout(async () => {
-        // Simular token de autenticação
-        await AsyncStorage.setItem('@FarmApp:token', 'dummy-auth-token');
-        await AsyncStorage.setItem('@FarmApp:refreshToken', 'dummy-refresh-token');
-        
-        // Simular dados do usuário
-        const userDataMock = {
-          id: '123',
-          name: 'Usuário de Teste',
-          email: email,
-          role: 'manager',
-        };
-        
-        await AsyncStorage.setItem('@FarmApp:user', JSON.stringify(userDataMock));
-        
-        // Recarregar o aplicativo para mostrar a tela principal
-        // Na implementação real, um evento seria disparado para atualizar o estado de autenticação
-        setLoading(false);
-      }, 1500);
+      // Estamos usando um timeout para simular a chamada de API
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Simulando o token e os dados do usuário
+      await AsyncStorage.setItem('@FarmApp:token', 'dummy-auth-token');
+      await AsyncStorage.setItem('@FarmApp:refreshToken', 'dummy-refresh-token');
+      
+      // Simular dados do usuário
+      const userDataMock = {
+        id: '123',
+        name: 'Usuário de Teste',
+        email: email,
+        role: 'manager',
+      };
+      
+      await AsyncStorage.setItem('@FarmApp:user', JSON.stringify(userDataMock));
+      
+      // Navegação para a tela principal após login bem-sucedido
+      // Usando CommonActions para reset completo da pilha de navegação
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'Main' as never }],
+        })
+      );
     } catch (error) {
+      console.error('Erro no login:', error);
       setLoading(false);
       Alert.alert('Erro', 'Não foi possível fazer login. Tente novamente.');
     }
   };
   
   const handleForgotPassword = () => {
-    navigation.navigate('ForgotPassword');
+    navigation.navigate('ForgotPassword' as never);
   };
   
   return (

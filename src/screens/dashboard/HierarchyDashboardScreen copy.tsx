@@ -4,12 +4,12 @@ import { View, Text, ScrollView, RefreshControl, ActivityIndicator, TouchableOpa
 import { AppHeader } from '@components/layout/AppHeader';
 import { useTheme } from '@hooks/useTheme';
 import { useIndicatorHierarchy } from '@hooks/useIndicatorHierarchy';
+import HierarchyTree from '@components/dashboard/HierarchyTree';
 import styled from 'styled-components/native';
 import { useNavigation, CommonActions } from '@react-navigation/native';
 import { Indicator } from '@/types/metrics';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { DashboardStackParamList } from '@navigation/DashboardNavigator';
-import IndicatorGraph from '@components/dashboard/IndicatorGraph';
 
 // Definir o tipo de navegação
 type HierarchyScreenNavigationProp = StackNavigationProp<DashboardStackParamList>;
@@ -58,22 +58,6 @@ const TabText = styled(Text)<{ active: boolean }>`
   color: ${props => props.active ? '#FFFFFF' : props.theme.colors.primary};
 `;
 
-const GraphTitle = styled(Text)`
-  font-family: ${props => props.theme.typography.fontFamily.semiBold};
-  font-size: ${props => props.theme.typography.fontSize.lg}px;
-  color: ${props => props.theme.colors.text};
-  margin-bottom: ${props => props.theme.spacing.md}px;
-  padding-horizontal: ${props => props.theme.spacing.md}px;
-`;
-
-const GraphDescription = styled(Text)`
-  font-family: ${props => props.theme.typography.fontFamily.regular};
-  font-size: ${props => props.theme.typography.fontSize.md}px;
-  color: ${props => props.theme.colors.subtext};
-  margin-bottom: ${props => props.theme.spacing.md}px;
-  padding-horizontal: ${props => props.theme.spacing.md}px;
-`;
-
 export const HierarchyDashboardScreen: React.FC = () => {
   const theme = useTheme();
   const navigation = useNavigation<HierarchyScreenNavigationProp>();
@@ -87,16 +71,6 @@ export const HierarchyDashboardScreen: React.FC = () => {
     refresh
   } = useIndicatorHierarchy();
   
-  // Estado para o indicador central do grafo
-  const [centralIndicatorId, setCentralIndicatorId] = useState<string>(
-    activeTab === 'faturamento' ? 'faturamento' : 'qtdCupons'
-  );
-  
-  // Efeito para atualizar o indicador central quando trocar a tab
-  React.useEffect(() => {
-    setCentralIndicatorId(activeTab === 'faturamento' ? 'faturamento' : 'qtdCupons');
-  }, [activeTab]);
-  
   const handleRefresh = async () => {
     setRefreshing(true);
     await refresh();
@@ -105,24 +79,15 @@ export const HierarchyDashboardScreen: React.FC = () => {
   
   const handleSelectIndicator = (indicator: Indicator) => {
     try {
-      // Defina o indicador selecionado para os detalhes
       setSelectedIndicator(indicator.id);
       
-      // Se apenas quisermos mudar o centro do grafo sem navegar
-      if (indicator.id !== centralIndicatorId) {
-        setCentralIndicatorId(indicator.id);
-      }
-      
-      // Se clicar duas vezes no mesmo nó, navegamos para os detalhes
-      if (indicator.id === centralIndicatorId) {
-        // Usando CommonActions para navegação mais robusta entre navegadores aninhados
-        navigation.dispatch(
-          CommonActions.navigate({
-            name: 'IndicatorDetails',
-            params: { indicator },
-          })
-        );
-      }
+      // Usando CommonActions para navegação mais robusta entre navegadores aninhados
+      navigation.dispatch(
+        CommonActions.navigate({
+          name: 'IndicatorDetails',
+          params: { indicator },
+        })
+      );
     } catch (error) {
       console.error('Erro na navegação:', error);
       
@@ -161,9 +126,6 @@ export const HierarchyDashboardScreen: React.FC = () => {
     );
   }
   
-  // Obter o nome do indicador central para o título
-  const centralIndicator = indicatorTree?.indicators.find(ind => ind.id === centralIndicatorId);
-  
   return (
     <Container theme={theme}>
       <AppHeader title="Dashboard de KPIs" rightIcon="bell" onRightIconPress={() => {}} />
@@ -184,10 +146,7 @@ export const HierarchyDashboardScreen: React.FC = () => {
         <TabsContainer theme={theme}>
           <TabButton 
             active={activeTab === 'faturamento'} 
-            onPress={() => {
-              setActiveTab('faturamento');
-              setCentralIndicatorId('faturamento');
-            }}
+            onPress={() => setActiveTab('faturamento')}
             theme={theme}
           >
             <TabText active={activeTab === 'faturamento'} theme={theme}>
@@ -197,10 +156,7 @@ export const HierarchyDashboardScreen: React.FC = () => {
           
           <TabButton 
             active={activeTab === 'cupom'} 
-            onPress={() => {
-              setActiveTab('cupom');
-              setCentralIndicatorId('qtdCupons');
-            }}
+            onPress={() => setActiveTab('cupom')}
             theme={theme}
           >
             <TabText active={activeTab === 'cupom'} theme={theme}>
@@ -209,23 +165,11 @@ export const HierarchyDashboardScreen: React.FC = () => {
           </TabButton>
         </TabsContainer>
         
-        {centralIndicator && (
-          <GraphTitle theme={theme}>
-            Análise de Causas: {centralIndicator.name}
-          </GraphTitle>
-        )}
-        
-        <GraphDescription theme={theme}>
-          Toque nos nós para explorar as relações de causa e efeito. Toque duas vezes em um nó para ver detalhes completos.
-        </GraphDescription>
-        
         {indicatorTree && (
-          <IndicatorGraph
-            indicators={indicatorTree.indicators}
-            relations={indicatorTree.relations}
-            centralIndicatorId={centralIndicatorId}
-            onIndicatorSelect={handleSelectIndicator}
-            flowType={activeTab}
+          <HierarchyTree
+            indicatorTree={indicatorTree}
+            onSelectIndicator={handleSelectIndicator}
+            activeFlowType={activeTab}
           />
         )}
       </ContentContainer>

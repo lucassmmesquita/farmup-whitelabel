@@ -1,14 +1,13 @@
 // src/hooks/useIndicatorHierarchy.ts
 import { useState, useEffect } from 'react';
 import hierarchyService from '@/services/api/hierarchyService';
-import { IndicatorTree, Indicator, IndicatorRelation } from '@/types/metrics';
+import { IndicatorTree, Indicator } from '@/types/metrics';
 
 export const useIndicatorHierarchy = () => {
   const [loading, setLoading] = useState(true);
   const [indicatorTree, setIndicatorTree] = useState<IndicatorTree | null>(null);
   const [selectedIndicator, setSelectedIndicator] = useState<string | null>(null);
   const [recommendations, setRecommendations] = useState<any[]>([]);
-  const [relatedIndicators, setRelatedIndicators] = useState<Indicator[]>([]);
   
   useEffect(() => {
     loadIndicatorTree();
@@ -17,7 +16,6 @@ export const useIndicatorHierarchy = () => {
   useEffect(() => {
     if (selectedIndicator) {
       loadRecommendations(selectedIndicator);
-      loadRelatedIndicators(selectedIndicator);
     }
   }, [selectedIndicator]);
   
@@ -42,26 +40,6 @@ export const useIndicatorHierarchy = () => {
       console.error('Erro ao carregar recomendações:', error);
       setRecommendations([]);
     }
-  };
-  
-  const loadRelatedIndicators = (indicatorId: string) => {
-    if (!indicatorTree) return;
-    
-    const related: Indicator[] = [];
-    
-    // Encontrar relações em que o indicador selecionado é fonte ou alvo
-    indicatorTree.relations.forEach(relation => {
-      if (relation.sourceId === indicatorId) {
-        const targetIndicator = indicatorTree.indicators.find(ind => ind.id === relation.targetId);
-        if (targetIndicator) related.push(targetIndicator);
-      }
-      if (relation.targetId === indicatorId) {
-        const sourceIndicator = indicatorTree.indicators.find(ind => ind.id === relation.sourceId);
-        if (sourceIndicator) related.push(sourceIndicator);
-      }
-    });
-    
-    setRelatedIndicators(related);
   };
   
   const getChildIndicators = (parentId: string, flowType?: 'faturamento' | 'cupom'): Indicator[] => {
@@ -102,46 +80,6 @@ export const useIndicatorHierarchy = () => {
     const outgoing = indicatorTree.relations.filter(r => r.sourceId === indicatorId);
     
     return { incoming, outgoing };
-  };
-  
-  // Nova função para obter todas as relações de um indicador (diretas e indiretas)
-  const getAllRelatedIndicators = (indicatorId: string, flowType?: 'faturamento' | 'cupom'): Indicator[] => {
-    if (!indicatorTree) return [];
-    
-    const relatedIds = new Set<string>();
-    const result: Indicator[] = [];
-    
-    // Função recursiva para encontrar relações
-    const findRelated = (id: string, depth: number = 0, maxDepth: number = 2) => {
-      if (depth > maxDepth) return;
-      
-      // Adicionar relações diretas
-      indicatorTree.relations
-        .filter(r => (!flowType || r.flowType === flowType))
-        .forEach(r => {
-          if (r.sourceId === id) {
-            relatedIds.add(r.targetId as string);
-            findRelated(r.targetId as string, depth + 1, maxDepth);
-          }
-          if (r.targetId === id) {
-            relatedIds.add(r.sourceId as string);
-            findRelated(r.sourceId as string, depth + 1, maxDepth);
-          }
-        });
-    };
-    
-    // Iniciar busca a partir do indicador selecionado
-    findRelated(indicatorId);
-    
-    // Transformar IDs em objetos de indicador
-    relatedIds.forEach(id => {
-      const indicator = indicatorTree.indicators.find(i => i.id === id);
-      if (indicator && (indicator.flowType === flowType || !flowType)) {
-        result.push(indicator);
-      }
-    });
-    
-    return result;
   };
   
   const getPrimaryIndicators = (flowType?: 'faturamento' | 'cupom'): Indicator[] => {
@@ -185,11 +123,9 @@ export const useIndicatorHierarchy = () => {
     selectedIndicator,
     setSelectedIndicator,
     recommendations,
-    relatedIndicators,
     getChildIndicators,
     getParentIndicator,
     getRelations,
-    getAllRelatedIndicators,
     getPrimaryIndicators,
     getRootIndicators,
     isActionable,

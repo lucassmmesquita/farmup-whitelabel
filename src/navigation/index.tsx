@@ -1,4 +1,4 @@
-// src/navigation/index.tsx (atualizado)
+// src/navigation/index.tsx
 import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -29,6 +29,7 @@ export const AppNavigation: React.FC = () => {
         setIsAuthenticated(!!token);
       } catch (error) {
         console.error('Error checking authentication:', error);
+        setIsAuthenticated(false);
       } finally {
         // Simular carregamento inicial
         setTimeout(() => {
