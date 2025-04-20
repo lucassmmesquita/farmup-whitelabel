@@ -166,7 +166,7 @@ export const HierarchyDashboardScreen: React.FC = () => {
   
   return (
     <Container theme={theme}>
-      <AppHeader title="Dashboard de KPIs" rightIcon="bell" onRightIconPress={() => {}} />
+      <AppHeader title="Diagnóstico de KPIs" rightIcon="bell" onRightIconPress={() => {}} />
       
       <ContentContainer
         refreshControl={
